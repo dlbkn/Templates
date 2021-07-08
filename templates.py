@@ -33,12 +33,15 @@
 ##########################################################################
 
 
-
-from PyQt5 import QtCore
-from PyQt5 import QtWidgets
+from PyQt5 import (
+    QtCore,
+    QtGui,
+    QtWidgets,
+)
+from eddy.core.commands.nodes import CommandNodeAdd
 
 from eddy.core.datatypes.graphol import Item, Identity
-from eddy.core.items.nodes.facet import FacetNode
+from eddy.core.functions.signals import connect
 from eddy.core.plugin import AbstractPlugin
 
 
@@ -96,15 +99,16 @@ class ItemSetPlugin(AbstractPlugin):
             concepts = diagram.selectedNodes(filter_on_nodes=lambda i: i.identity() is Identity.Concept)
             if len(concepts) == 0:
                 return
-            if len(concepts) > 1:
-                print("Hai selezionato più di un concetto!!!")
-                return
+            dialog = HierarchyTemplateDialog(self.session)
+            #if not dialog.exec_():
+            #    return
+            self.session.undostack.beginMacro('disjoint union nodes')
             for item in concepts:
                 if item.identity() is Identity.Concept:
-                    node = Item.FacetNode
-                    diagram.addItem(node)
-                    node.paint()
-                    print("L'item è in posizione ({}, {})".format(item.pos().x(), item.pos().y()))
+                    node = diagram.factory.create(Item.DisjointUnionNode)
+                    node.setPos(item.pos() + QtCore.QPointF(0.0, 100.0))
+                    self.session.undostack.push(CommandNodeAdd(diagram, node))
+            self.session.undostack.endMacro()
 
     def placeAttributes(self):
         """
@@ -134,7 +138,6 @@ class ItemSetPlugin(AbstractPlugin):
         for action in self.actions:
             self.session.widget('view_toolbar').removeAction(action)
 
-
     def start(self):
         """
         Perform initialization tasks for the plugin.
@@ -158,3 +161,19 @@ class ItemSetPlugin(AbstractPlugin):
         self.actions.add(self.session.widget('view_toolbar').addWidget(self.widget('button_higherarchy')))
         self.actions.add(self.session.widget('view_toolbar').addWidget(self.widget('button_attributes')))
         self.actions.add(self.session.widget('view_toolbar').addWidget(self.widget('button_relationship')))
+
+
+class HierarchyTemplateDialog(QtWidgets.QDialog):
+    """
+
+    """
+    def __init__(self, parent=None, **kwags):
+        super().__init__(parent, **kwags)
+
+        self.button = QtWidgets.QPushButton("Ok", self)
+        self.mainLayout = QtWidgets.QVBoxLayout(self)
+        self.mainLayout.setContentsMargins(0, 0, 0, 0)
+        self.mainLayout.addWidget(self.button)
+        self.setWindowTitle('Configure Hierarchy')
+        self.setWindowIcon(QtGui.QIcon(':/icons/128/ic_eddy'))
+        connect(self.button.clicked, lambda x: print("Bottone Premuto"))

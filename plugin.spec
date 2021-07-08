@@ -33,6 +33,6 @@
 [plugin]
 author: Daniele Pantaleone
 contact: pantaleone@dis.uniroma1.it
-id: item_set
+id: templates
 name: Item set
 version: 0.1

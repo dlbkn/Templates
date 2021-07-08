@@ -38,9 +38,13 @@ from PyQt5 import (
     QtGui,
     QtWidgets,
 )
+from eddy.core.commands.edges import CommandEdgeAdd
 from eddy.core.commands.nodes import CommandNodeAdd
 
-from eddy.core.datatypes.graphol import Item, Identity
+from eddy.core.datatypes.graphol import (
+    Item,
+    Identity,
+)
 from eddy.core.functions.signals import connect
 from eddy.core.plugin import AbstractPlugin
 
@@ -108,6 +112,10 @@ class ItemSetPlugin(AbstractPlugin):
                     node = diagram.factory.create(Item.DisjointUnionNode)
                     node.setPos(item.pos() + QtCore.QPointF(0.0, 100.0))
                     self.session.undostack.push(CommandNodeAdd(diagram, node))
+                    edge = diagram.factory.create(Item.InclusionEdge, source=node, target=item)
+                    node.addEdge(edge)
+                    item.addEdge(edge)
+                    self.session.undostack.push(CommandEdgeAdd(diagram, edge))
             self.session.undostack.endMacro()
 
     def placeAttributes(self):
